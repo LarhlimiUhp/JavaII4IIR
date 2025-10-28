@@ -1,11 +1,3 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
-# donne alors le document complet
-
-Voici le support de cours complet en Markdown, intégrant à la fois l’image demandée ainsi que les descriptifs brèves pour chaque projet :
-
-***
-
 # Collections en Java : Guide Complet pour Étudiants
 
 **Auteur : A. Larhlimi**
@@ -36,13 +28,7 @@ Le framework Collections repose sur une architecture hiérarchique d'interfaces 
 
 Diagramme simplifié :
 
-```
-          Collection
-         /     |     \
-     List     Set    Queue
-                   \
-                    Map
-```
+<img src="collection.jpeg" style="height:464px;margin-right:432px"/>
 
 
 ***
@@ -823,5 +809,6 @@ Le framework des Collections en Java offre une grande diversité d'outils adapt�
 ***
 
 Ce document est prêt à être diffusé, imprimé, ou converti en PDF pour votre cours ! Si tu veux le recevoir sous forme de fichier ou dans un format spécial, précise ta demande.
+
 
 ![](collection.jpg)
