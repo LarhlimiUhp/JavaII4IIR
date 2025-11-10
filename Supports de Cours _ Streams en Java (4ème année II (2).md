@@ -121,7 +121,7 @@ List<String> noms = Arrays.asList("ali", "asma", "reda", "amina");
 List<String> resultat = noms.stream()
     .filter(n -> n.length() > 3)
     .map(String::toUpperCase)
-    .collect(Collectors.toList());
+    .toList());
 // resultat = [ASMA, REDA, AMINA]
 ```
 
