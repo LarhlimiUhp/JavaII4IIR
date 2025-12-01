@@ -1,0 +1,584 @@
+\documentclass[a4paper,12pt]{article}
+
+% =============================================================
+% PREAMBULE
+% =============================================================
+
+% --- Encodage et Langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{textcomp}
+
+% --- Mise en page ---
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{parskip} % Espace entre les paragraphes
+
+% --- Éléments graphiques et Liens ---
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+
+% --- Couleurs Personnalisées (Thème IDE) ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{codeblue}{rgb}{0,0,0.8}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+\definecolor{emsiblue}{RGB}{0, 102, 204}
+\definecolor{alertred}{RGB}{200, 0, 0}
+
+% --- Configuration des liens ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=emsiblue,
+    filecolor=magenta,      
+    urlcolor=emsiblue,
+    pdftitle={TP Java Avancé - JDBC},
+    pdfauthor={EMSI}
+}
+
+% --- Configuration de l'affichage du code (Listings) ---
+\usepackage{listings}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codeblue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4,
+    frame=single,
+    rulecolor=\color{lightgray},
+    % Gestion des accents dans le code
+    literate={é}{{\'e}}1 {è}{{\`e}}1 {à}{{\`a}}1 {ç}{{\c{c}}}1 {ê}{{\^e}}1 {É}{{\'E}}1 {À}{{\`A}}1,
+}
+\lstset{style=mystyle}
+
+% --- Boîtes personnalisées (Alertes, Info, Debug) ---
+\newtcolorbox{info-box}[1]{
+    colback=blue!5!white,
+    colframe=emsiblue,
+    title=\textbf{\texttt{i} #1},
+    fonttitle=\bfseries
+}
+
+\newtcolorbox{debug-box}[1]{
+    colback=orange!10!white,
+    colframe=orange!80!black,
+    title=\textbf{\texttt{!} DÉBOGAGE : #1},
+    fonttitle=\bfseries
+}
+
+\newtcolorbox{action-box}[1]{
+    colback=green!5!white,
+    colframe=green!60!black,
+    title=\textbf{\texttt{>} ACTION : #1},
+    fonttitle=\bfseries
+}
+
+% =============================================================
+% DOCUMENT PRINCIPAL
+% =============================================================
+
+\begin{document}
+
+% --- Page de Titre ---
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    % Emplacement pour le logo (décommenter si vous avez une image)
+    % \includegraphics[width=0.4\textwidth]{logo_emsi.png} 
+    
+    \vspace{2cm}
+    {\LARGE \textbf{EMSI Maroc -- 2\textsuperscript{ème} Année IIR}}\\[0.5cm]
+    {\Large Ingénierie Informatique et Réseaux}\\[2cm]
+    
+    \rule{\linewidth}{0.5mm} \\[0.4cm]
+    {\Huge \textbf{Module : Java Avancé \& Bases de Données}} \\[0.4cm]
+    {\huge \textbf{TP Guidé : JDBC, Maven \& MySQL}} \\[0.4cm]
+    \rule{\linewidth}{0.5mm} \\[2cm]
+    
+    \textbf{Environnement technique :}\\
+    IntelliJ IDEA $\cdot$ Maven $\cdot$ MySQL 8.0 $\cdot$ JDK 17+\\[2cm]
+    
+    \vfill
+    
+    {\large \textbf{Durée estimée : 4 Heures}}\\[1cm]
+    
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =============================================================
+\section{Introduction et Architecture JDBC}
+% =============================================================
+
+\subsection{Contexte et Objectifs}
+Dans ce TP, vous allez incarner un développeur Backend Java. Votre mission est de construire la couche d'accès aux données (\textit{Data Access Layer}) d'une application de gestion d'étudiants.
+
+L'objectif pédagogique est de comprendre comment Java communique nativement avec une base de données relationnelle avant d'utiliser des frameworks plus complexes (comme Hibernate ou Spring Data).
+
+\subsection{Qu'est-ce que JDBC ?}
+JDBC (\textbf{Java Database Connectivity}) est une API standard fournie par Oracle dans le JDK (\texttt{java.sql}). Elle agit comme un traducteur universel entre votre code Java (orienté objet) et les bases de données (orientées tables).
+
+\subsection{Architecture en couches}
+Pour qu'une application Java puisse exécuter du SQL, quatre composants collaborent :
+
+\begin{enumerate}
+    \item \textbf{Application Java :} C'est votre code. Il utilise des interfaces standard (\texttt{Connection}, \texttt{Statement}, \texttt{ResultSet}).
+    \item \textbf{JDBC API (DriverManager) :} C'est le gestionnaire intégré à Java. Il charge le pilote approprié en fonction de l'URL de connexion.
+    \item \textbf{Pilote JDBC (Driver) :} C'est un fichier \texttt{.jar} tiers (ex: \texttt{mysql-connector.jar}). Il traduit les appels Java en protocole réseau compréhensible par le SGBD.
+    \item \textbf{SGBD :} Le serveur de base de données (ici MySQL).
+\end{enumerate}
+
+\begin{info-box}{Architecture 2-Tiers}
+Dans ce TP, nous utilisons une architecture \textbf{Client Lourd} (2-tiers). L'application Java tourne sur votre machine et se connecte directement au serveur de base de données via le réseau TCP/IP.
+\end{info-box}
+
+\newpage
+
+% =============================================================
+\section{TP 1 : Création du projet Maven}
+% =============================================================
+
+\textbf{Objectif :} Initialiser un projet Java professionnel avec gestion de dépendances.
+
+\subsection{Pourquoi Maven ?}
+Plutôt que de télécharger manuellement des fichiers \texttt{.jar} sur internet (méthode sujette aux erreurs), nous allons utiliser \textbf{Maven}. Maven est un outil qui télécharge automatiquement les bibliothèques nécessaires décrites dans un fichier de configuration nommé \texttt{pom.xml}.
+
+\subsection{Étapes de création sous IntelliJ IDEA}
+
+\begin{action-box}{Initialisation}
+\begin{enumerate}
+    \item Lancez \textbf{IntelliJ IDEA}.
+    \item Sur l'écran d'accueil, cliquez sur le bouton bleu \textbf{New Project}.
+    \item Dans le menu de gauche, assurez-vous que \textbf{Java} est sélectionné.
+\end{enumerate}
+\end{action-box}
+
+Remplissez les champs de configuration exactement comme suit :
+\begin{itemize}
+    \item \textbf{Name :} \texttt{TP\_JDBC\_Avance}
+    \item \textbf{Location :} Votre dossier de travail habituel.
+    \item \textbf{Language :} \textbf{Java}
+    \item \textbf{Build system :} \textbf{Maven} (C'est le point le plus important !).
+    \item \textbf{JDK :} Sélectionnez la version installée (17, 21 ou plus récent).
+\end{itemize}
+
+Dépliez la section \textbf{Advanced Settings} :
+\begin{itemize}
+    \item \textbf{GroupId :} \texttt{ma.emsi.jdbc} (Convention : pays.entreprise.projet)
+    \item \textbf{ArtifactId :} \texttt{tp-jdbc-intro}
+    \item Cliquez sur \textbf{Create}.
+\end{itemize}
+
+\subsection{Premier Test "Hello JDBC"}
+Vérifiez que l'environnement est sain.
+\begin{enumerate}
+    \item Dans le panneau \textbf{Project} (à gauche), faites un clic droit sur \texttt{src/main/java}.
+    \item Sélectionnez \texttt{New > Java Class}.
+    \item Nommez-la \texttt{ma.emsi.jdbc.Main}.
+    \item Tapez \texttt{psvm} puis \texttt{Tab} pour générer la méthode main, et écrivez :
+\end{enumerate}
+
+\begin{lstlisting}[language=Java]
+package ma.emsi.jdbc;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello JDBC ! Projet Maven initialise.");
+    }
+}
+\end{lstlisting}
+
+Exécutez le code (Flèche verte). Si le message s'affiche dans la console, passez au TP suivant.
+
+\newpage
+
+% =============================================================
+\section{TP 2 : Configuration du \texttt{pom.xml}}
+% =============================================================
+
+\textbf{Objectif :} Importer le pilote JDBC MySQL sans aucun téléchargement manuel.
+
+\subsection{Le fichier \texttt{pom.xml}}
+Ce fichier à la racine du projet est le "cerveau" de Maven. Il contient l'identité du projet et ses dépendances.
+
+\subsection{Ajout des dépendances}
+\begin{action-box}{Édition du POM}
+\begin{enumerate}
+    \item Ouvrez le fichier \texttt{pom.xml}.
+    \item Localisez la balise fermante \texttt{</properties>} ou \texttt{</version>}.
+    \item Créez une section \texttt{<dependencies>} et insérez le code XML ci-dessous :
+\end{enumerate}
+\end{action-box}
+
+\begin{lstlisting}[language=XML]
+<dependencies>
+    <!-- 1. Driver JDBC pour MySQL (Connector/J) -->
+    <!-- Permet a Java de parler le langage de MySQL -->
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>8.0.33</version>
+    </dependency>
+
+    <!-- 2. Driver JDBC pour PostgreSQL (Optionnel, pour comparaison) -->
+    <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>42.7.2</version>
+    </dependency>
+    
+    <!-- (Optionnel) Lombok : Pour reduire le code boilerplate -->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.30</version>
+        <scope>provided</scope>
+    </dependency>
+</dependencies>
+\end{lstlisting}
+
+\subsection{Rechargement du projet (CRUCIAL)}
+C'est l'étape que les étudiants oublient souvent. Ajouter du texte ne suffit pas, il faut dire à IntelliJ de télécharger les fichiers.
+
+\begin{enumerate}
+    \item Repérez la petite icône flottante \textbf{"M"} (avec des flèches de rafraîchissement) qui apparaît en haut à droite de l'éditeur.
+    \item Cliquez dessus (\textit{Load Maven Changes}).
+    \item \textit{Alternative :} Appuyez sur \texttt{Ctrl + Shift + O}.
+\end{enumerate}
+
+\begin{debug-box}{Vérification}
+Regardez dans le panneau de gauche, tout en bas, section \textbf{External Libraries}. Vous devez voir apparaître \texttt{mysql-connector-java-8.0.33.jar}. Si ce n'est pas le cas, Maven n'a pas rechargé.
+\end{debug-box}
+
+\newpage
+
+% =============================================================
+\section{TP 3 : Préparation de la Base de Données}
+% =============================================================
+
+\textbf{Objectif :} Installer un serveur MySQL propre et créer la structure de données.
+
+\subsection{Installation de MySQL Community Server}
+Nous n'utiliserons pas XAMPP ou WAMP, mais le serveur officiel pour une configuration "pro".
+
+\begin{enumerate}
+    \item Téléchargez l'installateur MSI sur : \url{https://dev.mysql.com/downloads/mysql/}
+    \item Choisissez le fichier \textbf{"Windows (x86, 64-bit), MSI Installer"}.
+    \item Lancez l'installation et choisissez le type \textbf{Typical}.
+    \item À la fin, cochez \textbf{"Run MySQL Configurator"}.
+\end{enumerate}
+
+\subsubsection*{Configuration du Serveur}
+Suivez l'assistant de configuration pas à pas :
+\begin{itemize}
+    \item \textbf{Type and Networking :} Vérifiez que le port est \textbf{3306}.
+    \item \textbf{Authentication Method :} Laissez "Use Strong Password Encryption".
+    \item \textbf{Accounts and Roles (IMPORTANT) :}
+    \begin{itemize}
+        \item Définissez le mot de passe Root : \textbf{\texttt{pass123}}.
+        \item Confirmez-le. \textbf{Notez-le bien ! Sans lui, impossible de continuer.}
+    \end{itemize}
+    \item \textbf{Apply Configuration :} Cliquez sur \textbf{Execute}.
+\end{itemize}
+
+\subsection{Création via MySQL Workbench}
+\begin{action-box}{Exécution du Script SQL}
+\begin{enumerate}
+    \item Ouvrez \textbf{MySQL Workbench}.
+    \item Cliquez sur la tuile \textbf{Local instance MySQL80} et entrez le mot de passe (\texttt{pass123}).
+    \item Ouvrez un nouvel onglet SQL (icône SQL+ en haut à gauche).
+    \item Copiez-collez le script complet ci-dessous :
+\end{enumerate}
+\end{action-box}
+
+\begin{lstlisting}[language=SQL]
+-- 1. Creation de la base de données
+CREATE DATABASE IF NOT EXISTS tp_jdbc;
+
+-- 2. Creation d'un utilisateur specifique (Securite)
+DROP USER IF EXISTS 'emsi_user'@'localhost';
+CREATE USER 'emsi_user'@'localhost' IDENTIFIED BY 'pass123';
+
+-- 3. Attribution des droits
+GRANT ALL PRIVILEGES ON tp_jdbc.* TO 'emsi_user'@'localhost';
+FLUSH PRIVILEGES;
+
+-- 4. Selection de la base
+USE tp_jdbc;
+
+-- 5. Creation de la table
+CREATE TABLE IF NOT EXISTS etudiants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,
+    prenom VARCHAR(50),
+    email VARCHAR(100) UNIQUE,
+    date_inscription DATE
+);
+
+-- 6. Insertion d'une donnee de test
+INSERT INTO etudiants (nom, prenom, email, date_inscription) 
+VALUES ('Alami', 'Ahmed', 'ahmed.alami@emsi.ma', '2024-01-15');
+\end{lstlisting}
+
+\begin{debug-box}{L'icône Éclair est grisée ?}
+Si vous ne pouvez pas cliquer sur le bouton d'exécution (l'éclair) :
+\begin{itemize}
+    \item Vérifiez qu'une connexion est bien sélectionnée en haut à droite de la fenêtre d'édition (parfois il est indiqué "No Connection").
+    \item Utilisez le raccourci clavier : \textbf{Ctrl + Shift + Entrée}.
+\end{itemize}
+\end{debug-box}
+
+\newpage
+
+% =============================================================
+\section{TP 4 : La Connexion JDBC}
+% =============================================================
+
+\textbf{Objectif :} Écrire le code Java pour se connecter à la base créée.
+
+\subsection{Concepts Clés}
+\begin{itemize}
+    \item \texttt{DriverManager} : La classe utilitaire qui fournit la connexion.
+    \item \texttt{Connection} : L'interface qui représente la session active avec la base.
+    \item \texttt{URL JDBC} : L'adresse de la base. Format : \texttt{jdbc:mysql://hote:port/base}.
+\end{itemize}
+
+\subsection{Code de Connexion}
+Créez la classe \texttt{ConnexionExemple.java} dans \texttt{ma.emsi.jdbc} :
+
+\begin{lstlisting}[language=Java]
+package ma.emsi.jdbc;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class ConnexionExemple {
+    public static void main(String[] args) {
+        // 1. Informations de connexion
+        // localhost = ma machine, 3306 = port par defaut MySQL
+        String url = "jdbc:mysql://localhost:3306/tp_jdbc";
+        String utilisateur = "emsi_user";
+        String motDePasse = "pass123";
+
+        System.out.println("Tentative de connexion...");
+
+        // 2. Ouverture de la connexion avec try-with-resources
+        // Le bloc try(...) ferme automatiquement la connexion a la fin
+        try (Connection conn = DriverManager.getConnection(url, utilisateur, motDePasse)) {
+
+            if (conn != null) {
+                System.out.println("Connexion reussie !");
+                // Recuperation de metadonnees pour confirmer
+                System.out.println("SGBD connecte : " + conn.getMetaData().getDatabaseProductName());
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Echec de la connexion !");
+            System.err.println("Message : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{debug-box}{Erreurs fréquentes}
+\begin{itemize}
+    \item \textbf{No suitable driver found :} L'URL est mal écrite ou Maven n'est pas rechargé.
+    \item \textbf{Communications link failure :} Le serveur MySQL est éteint ou le port n'est pas 3306.
+    \item \textbf{Access denied :} Mauvais mot de passe ou l'utilisateur \texttt{emsi\_user} n'a pas été créé (refaire le script SQL).
+\end{itemize}
+\end{debug-box}
+
+\newpage
+
+% =============================================================
+\section{TP 5 : Requêtes de Lecture (Statement)}
+% =============================================================
+
+\textbf{Objectif :} Récupérer la liste des étudiants (SELECT).
+
+\subsection{Statement et ResultSet}
+\begin{itemize}
+    \item \texttt{Statement} : Objet qui transporte la requête SQL vers le serveur.
+    \item \texttt{ResultSet} : Tableau de données retourné par le serveur. On le parcourt avec un curseur (\texttt{next()}).
+\end{itemize}
+
+\subsection{Code : Lister les étudiants}
+Créez la classe \texttt{ListerEtudiants.java} :
+
+\begin{lstlisting}[language=Java]
+package ma.emsi.jdbc;
+import java.sql.*;
+
+public class ListerEtudiants {
+    public static void main(String[] args) {
+        String url = "jdbc:mysql://localhost:3306/tp_jdbc";
+        String user = "emsi_user";
+        String pwd = "pass123";
+
+        try (Connection conn = DriverManager.getConnection(url, user, pwd);
+             Statement stmt = conn.createStatement();
+             // Execution de la requete SELECT
+             ResultSet rs = stmt.executeQuery("SELECT * FROM etudiants")) {
+
+            System.out.println("--- Liste des etudiants ---");
+            
+            // Parcours du curseur ligne par ligne
+            while (rs.next()) {
+                // Recuperation des colonnes par leur nom dans la base
+                int id = rs.getInt("id");
+                String nom = rs.getString("nom");
+                String prenom = rs.getString("prenom");
+                String email = rs.getString("email");
+                
+                System.out.println(id + " : " + nom.toUpperCase() + " " + prenom + " (" + email + ")");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{action-box}{Exercice}
+Modifiez la requête SQL dans le code pour ne récupérer que les étudiants dont le nom est "Alami" (\texttt{WHERE nom = 'Alami'}).
+\end{action-box}
+
+\newpage
+
+% =============================================================
+\section{TP 6 : Sécurité et PreparedStatement}
+% =============================================================
+
+\textbf{Objectif :} Insérer des données sans faille de sécurité (Injection SQL).
+
+\subsection{Le Danger de la Concaténation}
+Ne faites jamais ceci : 
+\texttt{"INSERT ... VALUES ('" + nom + "')"}
+
+Si l'utilisateur entre pour nom : \texttt{TOTO'); DROP TABLE etudiants; --}, il peut détruire votre base.
+
+\subsection{La Solution : PreparedStatement}
+Les valeurs sont remplacées par des points d'interrogation (\texttt{?}) et transmises séparément du code SQL.
+
+\subsection{Code : Insertion Interactive}
+Créez \texttt{InscriptionEtudiant.java} :
+
+\begin{lstlisting}[language=Java]
+package ma.emsi.jdbc;
+
+import java.sql.*;
+import java.util.Scanner;
+
+public class InscriptionEtudiant {
+    public static void main(String[] args) {
+        String url = "jdbc:mysql://localhost:3306/tp_jdbc";
+        String user = "emsi_user";
+        String pwd = "pass123";
+
+        // 1. Saisie utilisateur
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Nom : ");
+        String nom = sc.nextLine();
+        System.out.print("Prenom : ");
+        String prenom = sc.nextLine();
+        System.out.print("Email : ");
+        String email = sc.nextLine();
+
+        // 2. Requete parametree (Placeholders)
+        String sql = "INSERT INTO etudiants (nom, prenom, email, date_inscription) VALUES (?, ?, ?, NOW())";
+
+        try (Connection conn = DriverManager.getConnection(url, user, pwd);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // 3. Remplissage des parametres (Index commence a 1)
+            pstmt.setString(1, nom);
+            pstmt.setString(2, prenom);
+            pstmt.setString(3, email);
+
+            // 4. Execution de la mise a jour
+            int lignesAffectees = pstmt.executeUpdate();
+
+            if (lignesAffectees > 0) {
+                System.out.println("Succes ! Etudiant insere.");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur SQL : " + e.getMessage());
+        }
+    }
+}
+\end{lstlisting}
+
+\newpage
+
+% =============================================================
+\section{TP 7 : Bonus - Pattern DAO}
+% =============================================================
+
+\textbf{Objectif :} Structurer le code comme en entreprise.
+
+Le code SQL ne doit pas traîner dans la méthode \texttt{main}. On crée une classe \textbf{DAO} (Data Access Object) responsable du CRUD.
+
+\subsection{Structure du code}
+\begin{enumerate}
+    \item \textbf{Etudiant.java} : Une classe simple (POJO) avec getters et setters.
+    \item \textbf{EtudiantDAO.java} : La classe qui contient le JDBC.
+\end{enumerate}
+
+\begin{lstlisting}[language=Java, caption=Exemple partiel de EtudiantDAO]
+public class EtudiantDAO {
+    private String url = "jdbc:mysql://localhost:3306/tp_jdbc";
+    private String user = "emsi_user";
+    private String pwd = "pass123";
+
+    public void save(Etudiant e) {
+        String sql = "INSERT INTO etudiants (nom, prenom, email) VALUES (?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(url, user, pwd);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             
+            pstmt.setString(1, e.getNom());
+            pstmt.setString(2, e.getPrenom());
+            pstmt.setString(3, e.getEmail());
+            pstmt.executeUpdate();
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+\end{lstlisting}
+
+\section{Exercices Récapitulatifs}
+
+Pour valider ce module, réalisez les fonctionnalités suivantes :
+
+\begin{enumerate}
+    \item \textbf{Modification (UPDATE) :} Créez un programme qui demande l'ID d'un étudiant et son nouvel email, puis met à jour la base.
+    \item \textbf{Suppression (DELETE) :} Créez un programme qui supprime un étudiant par son ID.
+    \item \textbf{Gestion des exceptions :} Si l'utilisateur tente d'insérer un email qui existe déjà, capturez l'exception SQL spécifique et affichez un message convivial ("Cet email est déjà pris").
+    \item \textbf{Migration SGBD :} Si vous avez installé PostgreSQL, essayez de changer l'URL de connexion et le driver dans le POM. Vérifiez que votre code Java fonctionne sans aucune autre modification.
+\end{enumerate}
+
+\end{document}
