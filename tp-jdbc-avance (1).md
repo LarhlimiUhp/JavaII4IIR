@@ -1,7 +1,7 @@
 # TP JDBC Avancé avec Maven, MySQL et PostgreSQL
 
 **Travaux Pratiques - Ingénierie Informatique et Réseaux (2ᵉ année)**  
-**EMSI Maroc - Durée estimée : 6-8 heures**
+**EMSI Maroc - **
 
 ---
 
