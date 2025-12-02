@@ -43,6 +43,7 @@ JDBC joue le rôle d'**interface unifiée** : vous écrivez du code Java qui uti
 ### 1.2 Architecture en couches
 
 Dans une application utilisant JDBC, on distingue généralement plusieurs couches :
+<img src="jdbc1" style="height:464px;margin-right:432px"/>
 
 ```
 ┌─────────────────────────────────────┐
