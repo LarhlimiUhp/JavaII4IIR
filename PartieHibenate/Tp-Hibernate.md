@@ -1,13 +1,4 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
-# - utilise ma.emsi.tp au lieu de ma.enset.tp
-
-- insiste sur le mapping xml
-- donne le compte rendu au format markdown
-
-Voici une version adaptée à tes contraintes, en mettant l’accent sur le mapping **XML** et en utilisant le package `ma.emsi.tp`.
-
-***
+# Tp Hibernete
 
 ## 1. Mise en place de l’environnement
 
