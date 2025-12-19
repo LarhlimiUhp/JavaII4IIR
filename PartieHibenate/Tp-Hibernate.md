@@ -492,5 +492,8 @@ public class MainApp {
 }
 ```
 
-**Livrable** : capture d’écran de la console montrant la séquence CRUD + jointure, et commentaires d’étudiant sur les liens entre XML, classes et tables.
+**Livrable** : 
+- capture d’écran de la console montrant la séquence CRUD + jointure, et commentaires d’étudiant sur les liens entre XML, classes et tables.
+- code des requête SQL générée par Hibernete
+- capture image des résultats.
 
