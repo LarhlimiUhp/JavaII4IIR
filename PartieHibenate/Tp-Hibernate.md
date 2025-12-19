@@ -5,13 +5,13 @@
 ### Objectifs
 
 - Créer un projet Maven Java sous IntelliJ IDEA avec le groupId `ma.emsi.tp`.
-- Préparer l’utilisation de Hibernate avec mapping XML et MySQL.[^1][^2]
+- Préparer l’utilisation de Hibernate avec mapping XML et MySQL.
 
 
 ### Consignes
 
-- Créer un projet Maven : `File | New | Project | Maven`, `groupId = ma.emsi.tp`, `artifactId = tp-hibernate-mysql`. [^1]
-- Vérifier que Java 17 est bien configuré dans **Project Structure | Project SDK**. [^3]
+- Créer un projet Maven : `File | New | Project | Maven`, `groupId = ma.emsi.tp`, `artifactId = tp-hibernate-mysql`. 
+- Vérifier que Java 17 est bien configuré dans **Project Structure | Project SDK**. 
 
 ***
 
@@ -20,15 +20,15 @@
 ### Objectifs
 
 - Lancer un conteneur MySQL accessible sur `localhost:3306`.
-- Préparer l’import du script SQL fourni.[^4][^5]
+- Préparer l’import du script SQL fourni.
 
 
 ### Consignes pas à pas
 
-- Activer le plugin Docker : `File | Settings | Plugins`, installer **Docker**, redémarrer. [^6]
-- Configurer Docker : `File | Settings | Build, Execution, Deployment | Docker` → ajouter une connexion Docker locale. [^6]
-- Dans la fenêtre **Services**, onglet Docker, faire **Pull** de l’image `mysql:8.0`.[^4]
-- Créer un conteneur nommé `mysql-hibernate-tp` avec : port `3306:3306`, `MYSQL_ROOT_PASSWORD=root`, `MYSQL_DATABASE=gc2000`.[^4]
+- Activer le plugin Docker : `File | Settings | Plugins`, installer **Docker**, redémarrer. 
+- Configurer Docker : `File | Settings | Build, Execution, Deployment | Docker` → ajouter une connexion Docker locale. 
+- Dans la fenêtre **Services**, onglet Docker, faire **Pull** de l’image `mysql:8.0`.
+- Créer un conteneur nommé `mysql-hibernate-tp` avec : port `3306:3306`, `MYSQL_ROOT_PASSWORD=root`, `MYSQL_DATABASE=gc2000`.
 - Importer le script SQL : `docker exec -i mysql-hibernate-tp mysql -uroot -proot gc2000 < script_gc2000.sql`.
 
 **Livrable** : capture d’écran du conteneur MySQL en cours d’exécution dans IntelliJ.
@@ -40,14 +40,13 @@
 ### Objectifs
 
 - Créer une datasource MySQL pointant vers le conteneur Docker.
-- Vérifier le schéma créé par le script SQL.[^7][^8]
-
+- Vérifier le schéma créé par le script SQL.
 
 ### Consignes
 
-- Ouvrir la fenêtre **Database**, puis **+ | Data Source | MySQL**. [^7]
-- Paramètres : `host = localhost`, `port = 3306`, `user = root`, `password = root`, `database = gc2000`, puis **Test Connection** (télécharger le driver si demandé).[^7]
-- Exécuter un `SELECT * FROM <une_table>;` pour vérifier que les données du script sont présentes.[^9]
+- Ouvrir la fenêtre **Database**, puis **+ | Data Source | MySQL**. 
+- Paramètres : `host = localhost`, `port = 3306`, `user = root`, `password = root`, `database = gc2000`, puis **Test Connection** (télécharger le driver si demandé).
+- Exécuter un `SELECT * FROM <une_table>;` pour vérifier que les données du script sont présentes.
 
 **Livrable** : capture d’écran de la connexion réussie et d’une requête SQL simple.
 
@@ -58,7 +57,7 @@
 ### Objectifs
 
 - Configurer Hibernate à partir de fichiers XML : `hibernate.cfg.xml` et fichiers de mapping `*.hbm.xml`.
-- Comprendre le lien entre configuration, mappings et classes Java.[^2][^1]
+- Comprendre le lien entre configuration, mappings et classes Java.
 
 
 ### 4.1 Dépendances Maven
@@ -134,7 +133,7 @@ Créer `src/main/resources/hibernate.cfg.xml` :
 ### Objectifs
 
 - Dériver les fichiers `*.hbm.xml` à partir du schéma SQL.
-- Configurer les relations `one-to-many` et `many-to-one` en XML.[^1][^2]
+- Configurer les relations `one-to-many` et `many-to-one` en XML.
 
 On suppose les tables `client`, `commande`, `ligne_commande` (schéma identique à la version précédente).
 
@@ -414,7 +413,7 @@ public class ClientDao {
 ### Objectifs
 
 - Tester le mapping XML via un scénario CRUD complet et une requête avec jointure.
-- Vérifier la cohérence des relations définies dans les fichiers `hbm.xml`.[^20]
+- Vérifier la cohérence des relations définies dans les fichiers `hbm.xml`.
 
 
 ### Consignes
@@ -494,61 +493,4 @@ public class MainApp {
 ```
 
 **Livrable** : capture d’écran de la console montrant la séquence CRUD + jointure, et commentaires d’étudiant sur les liens entre XML, classes et tables.
-<span style="display:none">[^11][^12][^13][^14][^15][^16][^17][^18][^19][^21][^22][^23][^24][^25][^26][^27]</span>
-
-<div align="center">⁂</div>
-
-[^1]: https://mkyong.com/hibernate/quick-start-maven-hibernate-mysql-example/
-
-[^2]: https://docs.hibernate.org/orm/3.3/reference/en/html/mapping.html
-
-[^3]: https://www.javaguides.net/2021/08/hibernate-example-with-mysql-database.html
-
-[^4]: https://www.jetbrains.com/help/idea/running-a-dbms-image.html
-
-[^5]: https://www.docker.com/blog/getting-started-with-visual-studio-code-and-intellij-idea-docker-plugins/
-
-[^6]: https://www.jetbrains.com/help/idea/docker.html
-
-[^7]: https://www.jetbrains.com/help/idea/mysql.html
-
-[^8]: https://www.jetbrains.com/help/idea/managing-data-sources.html
-
-[^9]: https://qanswer.space/questions/integrating-intellij-with-a-local-mysql-database-a-step-by-step-guide
-
-[^10]: https://docs.hibernate.org/orm/4.1/quickstart/en-US/html/ch02.html
-
-[^11]: https://stackoverflow.com/questions/17992323/how-to-create-hbm-xml-file-for-mysql-view-and-how-to-add-it-in-hibernate-configu
-
-[^12]: https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/An-example-hibernatecfgxml-for-MySQL-8-and-Hibernate-5
-
-[^13]: https://www.geeksforgeeks.org/advance-java/hibernate-mapping-set-using-xml/
-
-[^14]: https://github.com/Dohbedoh/spring-hibernate-xml
-
-[^15]: https://thorben-janssen.com/jpa-persistence-xml/
-
-[^16]: https://stackoverflow.com/questions/9942767/how-to-make-a-hibernate-mapping-file-in-intellij-11-ultimate
-
-[^17]: https://jakarta.ee/learn/specification-guides/persistence-explained/
-
-[^18]: https://www.youtube.com/watch?v=QJddHc41xrM
-
-[^19]: https://fr.scribd.com/doc/40428093/Hibernate
-
-[^20]: https://payara.fish/blog/getting-started-with-jakarta-ee-9-jakarta-persistence-api-jpa/
-
-[^21]: https://www.geeksforgeeks.org/java/hibernate-table-per-hierarchy-using-xml-file/
-
-[^22]: https://openmrs.atlassian.net/wiki/spaces/docs/pages/25462957/Module+Hibernate+Mapping+Files
-
-[^23]: https://stackoverflow.com/questions/26187180/can-i-declare-mappings-in-the-persistence-xml
-
-[^24]: https://www.alwa.info/2017/How-to-install-Hibernate-in-IntelliJ-IDEA.html
-
-[^25]: https://www.centron.de/en/tutorial/hibernate-one-to-one-mapping-example-with-annotation-and-xml/
-
-[^26]: https://docs.redhat.com/en/documentation/red_hat_jboss_enterprise_application_platform/7.4/html/development_guide/java_persistence_api
-
-[^27]: https://intellij-support.jetbrains.com/hc/en-us/community/posts/206291199-Generate-Hibernate-Mapping-File
 
