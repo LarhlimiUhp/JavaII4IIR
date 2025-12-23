@@ -1660,19 +1660,879 @@ Ce support de cours vous a permis de :
 ✅ **Optimiser** avec lazy/eager loading et JOIN FETCH  
 ✅ **Déployer** avec Docker et MySQL 8  
 
-### Prochaines Étapes
 
-1. **Pratiquer** : Refaire le TP en autonomie
-2. **Étendre** : Ajouter relations Many-to-Many, héritage
-3. **Optimiser** : Cache de second niveau, batch processing
-4. **Migrer** : Passer aux annotations JPA
-5. **Intégrer** : Spring Boot + Spring Data JPA
+# Guide Complet : Configuration Docker Compose pour MySQL
+
+**Contexte** : Projet ORM Java avec Hibernate et MySQL  
+**Objectif** : Configurer un environnement MySQL isolé avec Docker  
+**Durée** : 15-20 minutes
 
 ---
 
-**© 2025 - EMSI Casablanca - Module Développement d'Applications d'Entreprise**  
-*Support créé pour la promotion 4 IIR - Semestre 8*  
+## 📦 Table des Matières
 
-**Auteur** : [Votre Nom]  
-**Contact** : [votre.email@emsi.ma]  
-**Version** : 1.0 - Décembre 2025
+1. [Création de la Structure](#1-création-de-la-structure)
+2. [Configuration docker-compose.yml](#2-configuration-docker-composeyml)
+3. [Script d'Initialisation init.sql](#3-script-dinitialisation-initsql)
+4. [Commandes Docker Compose](#4-commandes-docker-compose)
+5. [Configuration IntelliJ IDEA](#5-configuration-intellij-idea)
+6. [Personnalisation Avancée](#6-personnalisation-avancée)
+7. [Dépannage](#7-dépannage)
+8. [Checklist de Validation](#8-checklist-de-validation)
+
+---
+
+## 1. Création de la Structure
+
+### Étape 1.1 : Créer les Dossiers
+
+```bash
+# Depuis la racine de votre projet
+mkdir -p docker
+cd docker
+```
+
+**Structure attendue** :
+```
+votre-projet/
+├── docker/
+│   ├── docker-compose.yml  # À créer
+│   └── init.sql            # À créer
+├── src/
+│   └── main/
+│       ├── java/
+│       └── resources/
+└── pom.xml
+```
+
+### Étape 1.2 : Créer les Fichiers
+
+```bash
+# Dans le dossier docker/
+touch docker-compose.yml
+touch init.sql
+```
+
+---
+
+## 2. Configuration docker-compose.yml
+
+### Fichier Complet
+
+Créez le fichier `docker/docker-compose.yml` avec ce contenu :
+
+```yaml
+version: '3.8'
+
+services:
+  mysql-emsi:
+    image: mysql:8.0
+    container_name: emsi_mysql
+    restart: unless-stopped
+    
+    environment:
+      # Configuration MySQL
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: emsi_db
+      MYSQL_USER: emsi_user
+      MYSQL_PASSWORD: emsi_pass
+      
+    ports:
+      # Port externe:Port interne
+      - "3306:3306"
+      
+    volumes:
+      # Persistance des données
+      - mysql_data:/var/lib/mysql
+      # Script d'initialisation
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      
+    networks:
+      - emsi_network
+      
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  emsi_network:
+    driver: bridge
+```
+
+### Explications des Paramètres
+
+| Section | Paramètre | Description |
+|---------|-----------|-------------|
+| **image** | `mysql:8.0` | Version de MySQL (stable) |
+| **container_name** | `emsi_mysql` | Nom du conteneur Docker |
+| **restart** | `unless-stopped` | Redémarre automatiquement sauf si arrêté manuellement |
+| **MYSQL_ROOT_PASSWORD** | `root_password` | Mot de passe root MySQL |
+| **MYSQL_DATABASE** | `emsi_db` | Nom de la base créée automatiquement |
+| **MYSQL_USER** | `emsi_user` | Utilisateur applicatif (non-root) |
+| **MYSQL_PASSWORD** | `emsi_pass` | Mot de passe de emsi_user |
+| **ports** | `3306:3306` | Port hôte:Port conteneur |
+| **volumes** | `mysql_data` | Stockage persistant des données |
+| **volumes** | `./init.sql` | Script SQL exécuté au 1er démarrage |
+| **healthcheck** | `mysqladmin ping` | Vérifie que MySQL est prêt |
+
+---
+
+## 3. Script d'Initialisation init.sql
+
+### Fichier Complet
+
+Créez le fichier `docker/init.sql` avec ce contenu :
+
+```sql
+-- ============================================
+-- Script d'initialisation de la base EMSI
+-- Exécuté automatiquement au 1er démarrage
+-- ============================================
+
+-- Sélection de la base (créée automatiquement)
+USE emsi_db;
+
+-- ============================================
+-- CRÉATION DES TABLES
+-- ============================================
+
+-- Table Client
+CREATE TABLE IF NOT EXISTS client (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table Commande
+CREATE TABLE IF NOT EXISTS commande (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    date_commande DATE NOT NULL,
+    id_client BIGINT NOT NULL,
+    montant DECIMAL(10, 2) NOT NULL CHECK (montant >= 0),
+    statut ENUM('EN_COURS', 'LIVREE', 'ANNULEE') DEFAULT 'EN_COURS',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_client) REFERENCES client(id) ON DELETE CASCADE,
+    INDEX idx_client (id_client),
+    INDEX idx_date (date_commande)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- INSERTION DES DONNÉES DE TEST
+-- ============================================
+
+-- Clients
+INSERT INTO client (nom, email) VALUES 
+    ('Ahmed Bennani', 'ahmed.bennani@emsi.ma'),
+    ('Fatima Zahra El Amrani', 'fatima.zahra@emsi.ma'),
+    ('Youssef Alami', 'youssef.alami@emsi.ma'),
+    ('Imane Chakir', 'imane.chakir@emsi.ma'),
+    ('Mehdi Tazi', 'mehdi.tazi@emsi.ma');
+
+-- Commandes
+INSERT INTO commande (date_commande, id_client, montant, statut) VALUES
+    ('2025-01-15', 1, 1250.00, 'LIVREE'),
+    ('2025-01-20', 1, 890.50, 'EN_COURS'),
+    ('2025-01-22', 2, 3400.00, 'LIVREE'),
+    ('2025-02-01', 3, 567.80, 'EN_COURS'),
+    ('2025-02-05', 2, 1890.00, 'EN_COURS'),
+    ('2025-02-10', 4, 450.00, 'LIVREE');
+
+-- ============================================
+-- VÉRIFICATION
+-- ============================================
+
+-- Afficher un message de confirmation
+SELECT 'Base de données initialisée avec succès!' AS Message;
+SELECT COUNT(*) AS 'Nombre de clients' FROM client;
+SELECT COUNT(*) AS 'Nombre de commandes' FROM commande;
+```
+
+### Points Importants
+
+- ✅ **Encodage UTF-8** : Support des caractères arabes/français
+- ✅ **Indexes** : Optimisation des requêtes (email, id_client, date)
+- ✅ **Contraintes** : CHECK (montant > 0), UNIQUE (email)
+- ✅ **Cascade DELETE** : Supprimer un client supprime ses commandes
+- ✅ **Données de test** : 5 clients + 6 commandes
+
+---
+
+## 4. Commandes Docker Compose
+
+### 4.1 Démarrer MySQL
+
+```bash
+# Depuis le dossier docker/
+docker-compose up -d
+```
+
+**Options** :
+- `-d` : Mode détaché (background)
+- Sans `-d` : Affiche les logs en direct
+
+**Sortie attendue** :
+```
+[+] Running 3/3
+ ✔ Network docker_emsi_network  Created    0.1s
+ ✔ Volume "docker_mysql_data"   Created    0.0s
+ ✔ Container emsi_mysql         Started    1.2s
+```
+
+### 4.2 Vérifier l'État
+
+```bash
+# Liste des conteneurs
+docker-compose ps
+
+# Sortie attendue:
+NAME        IMAGE       STATUS       PORTS
+emsi_mysql  mysql:8.0   Up 30 secs   0.0.0.0:3306->3306/tcp
+```
+
+### 4.3 Voir les Logs
+
+```bash
+# Logs en temps réel
+docker-compose logs -f mysql-emsi
+
+# Dernières 50 lignes
+docker-compose logs --tail=50 mysql-emsi
+
+# Logs depuis 10 minutes
+docker-compose logs --since=10m mysql-emsi
+```
+
+**Chercher un message spécifique** :
+```bash
+docker-compose logs mysql-emsi | grep "ready for connections"
+```
+
+### 4.4 Se Connecter au Conteneur
+
+```bash
+# Connexion MySQL
+docker exec -it emsi_mysql mysql -u emsi_user -p
+# Mot de passe: emsi_pass
+```
+
+**Dans le shell MySQL** :
+```sql
+-- Vérifier la base
+SHOW DATABASES;
+USE emsi_db;
+
+-- Vérifier les tables
+SHOW TABLES;
+
+-- Vérifier les données
+SELECT * FROM client;
+SELECT * FROM commande;
+
+-- Statistiques
+SELECT c.nom, COUNT(cmd.id) as nb_commandes, SUM(cmd.montant) as total
+FROM client c
+LEFT JOIN commande cmd ON c.id = cmd.id_client
+GROUP BY c.id, c.nom;
+
+-- Quitter
+EXIT;
+```
+
+### 4.5 Arrêter MySQL
+
+```bash
+# Arrêter sans supprimer (données conservées)
+docker-compose stop
+
+# Arrêter et supprimer les conteneurs (données conservées dans volume)
+docker-compose down
+
+# Arrêter et SUPPRIMER TOUT (y compris données!)
+docker-compose down -v
+```
+
+### 4.6 Redémarrer MySQL
+
+```bash
+# Redémarrer simplement
+docker-compose restart
+
+# Forcer la recréation
+docker-compose up -d --force-recreate
+
+# Recréer TOUT (y compris volumes - PERTE DE DONNÉES)
+docker-compose down -v
+docker-compose up -d
+```
+
+### 4.7 Autres Commandes Utiles
+
+```bash
+# Voir les ressources utilisées
+docker stats emsi_mysql
+
+# Accéder au shell du conteneur
+docker exec -it emsi_mysql bash
+
+# Exporter la base
+docker exec emsi_mysql mysqldump -u emsi_user -pemsi_pass emsi_db > backup.sql
+
+# Importer une base
+docker exec -i emsi_mysql mysql -u emsi_user -pemsi_pass emsi_db < backup.sql
+
+# Nettoyer les volumes non utilisés
+docker volume prune
+```
+
+---
+
+## 5. Configuration IntelliJ IDEA
+
+### 5.1 Ouvrir Database Tool
+
+**Méthode 1** : Menu
+- `View` → `Tool Windows` → `Database`
+
+**Méthode 2** : Raccourci
+- Windows/Linux : `Alt + 1` puis cliquer sur `Database`
+- macOS : `⌘ + 1` puis cliquer sur `Database`
+
+**Méthode 3** : Recherche
+- Double `Shift` → Taper "Database"
+
+### 5.2 Ajouter une Connexion MySQL
+
+1. **Cliquer sur** `+` (en haut à gauche)
+2. **Sélectionner** `Data Source` → `MySQL`
+3. **Remplir les champs** :
+
+```
+┌─────────────────────────────────────┐
+│ Host:       localhost               │
+│ Port:       3306                    │
+│ Database:   emsi_db                 │
+│ User:       emsi_user               │
+│ Password:   emsi_pass               │
+│                                     │
+│ [✓] Save password                   │
+│                                     │
+│ URL: jdbc:mysql://localhost:3306/  │
+│      emsi_db                        │
+└─────────────────────────────────────┘
+```
+
+4. **Télécharger les drivers** :
+   - Cliquer sur `Download` si demandé
+   - IntelliJ télécharge automatiquement MySQL Connector
+
+5. **Tester la connexion** :
+   - Cliquer sur `Test Connection`
+   - Message attendu : ✅ "Succeeded"
+
+6. **Appliquer** :
+   - `Apply` → `OK`
+
+### 5.3 Explorer la Base de Données
+
+```
+emsi_db
+├── schemas
+│   └── emsi_db
+│       ├── tables
+│       │   ├── client (5 rows)
+│       │   └── commande (6 rows)
+│       ├── views
+│       └── routines
+```
+
+**Actions disponibles** :
+- **Double-clic** sur une table → Voir les données
+- **Clic-droit** → `Jump to Console` → Exécuter SQL
+- **Clic-droit** → `Dump Data to File` → Export CSV/JSON
+
+### 5.4 Exécuter des Requêtes SQL
+
+1. **Ouvrir la console SQL** :
+   - Clic-droit sur `emsi_db` → `New` → `Query Console`
+
+2. **Exécuter une requête** :
+```sql
+-- Sélectionner et appuyer sur Ctrl+Enter (Cmd+Enter sur Mac)
+SELECT c.nom, COUNT(cmd.id) as nb_commandes
+FROM client c
+LEFT JOIN commande cmd ON c.id = cmd.id_client
+GROUP BY c.id, c.nom;
+```
+
+---
+
+## 6. Personnalisation Avancée
+
+### 6.1 Changer le Port MySQL
+
+**Problème** : Port 3306 déjà utilisé par MySQL local
+
+**Solution** : Modifier `docker-compose.yml`
+```yaml
+services:
+  mysql-emsi:
+    ports:
+      - "3307:3306"  # MySQL accessible sur localhost:3307
+```
+
+**Adapter hibernate.cfg.xml** :
+```xml
+<property name="hibernate.connection.url">
+    jdbc:mysql://localhost:3307/emsi_db?serverTimezone=UTC
+</property>
+```
+
+### 6.2 Utiliser des Variables d'Environnement
+
+**Créer** `docker/.env` :
+```env
+MYSQL_ROOT_PASSWORD=super_secret_root
+MYSQL_DATABASE=emsi_db
+MYSQL_USER=emsi_user
+MYSQL_PASSWORD=emsi_pass
+MYSQL_PORT=3306
+```
+
+**Modifier** `docker-compose.yml` :
+```yaml
+services:
+  mysql-emsi:
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+```
+
+**Avantages** :
+- Sécurité : Pas de credentials dans Git
+- Flexibilité : Facile à changer par environnement
+
+### 6.3 Ajouter phpMyAdmin
+
+**Modifier** `docker-compose.yml` :
+```yaml
+services:
+  mysql-emsi:
+    # ... configuration existante ...
+  
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: emsi_phpmyadmin
+    environment:
+      PMA_HOST: mysql-emsi
+      PMA_USER: emsi_user
+      PMA_PASSWORD: emsi_pass
+    ports:
+      - "8080:80"
+    networks:
+      - emsi_network
+    depends_on:
+      - mysql-emsi
+```
+
+**Accès** : http://localhost:8080
+
+### 6.4 Limiter les Ressources
+
+**Ajouter** dans `docker-compose.yml` :
+```yaml
+services:
+  mysql-emsi:
+    # ... configuration existante ...
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'      # Maximum 1 CPU
+          memory: 512M     # Maximum 512 MB RAM
+        reservations:
+          memory: 256M     # Minimum 256 MB RAM
+```
+
+### 6.5 Configurer le Fuseau Horaire
+
+**Ajouter** dans `docker-compose.yml` :
+```yaml
+services:
+  mysql-emsi:
+    environment:
+      # ... autres variables ...
+      TZ: Africa/Casablanca
+    command: --default-time-zone='+01:00'
+```
+
+### 6.6 Activer les Logs MySQL
+
+**Ajouter** dans `docker-compose.yml` :
+```yaml
+services:
+  mysql-emsi:
+    command: 
+      - --general-log=1
+      - --general-log-file=/var/log/mysql/general.log
+      - --slow-query-log=1
+      - --slow-query-log-file=/var/log/mysql/slow.log
+      - --long-query-time=2
+```
+
+**Consulter les logs** :
+```bash
+docker exec -it emsi_mysql tail -f /var/log/mysql/general.log
+```
+
+---
+
+## 7. Dépannage
+
+### 7.1 Port 3306 Déjà Utilisé
+
+**Erreur** :
+```
+Error response from daemon: driver failed programming external 
+connectivity: Bind for 0.0.0.0:3306 failed: port is already allocated
+```
+
+**Diagnostic** :
+```bash
+# Voir qui utilise le port 3306
+sudo lsof -i :3306          # Linux/macOS
+netstat -ano | findstr 3306 # Windows
+```
+
+**Solutions** :
+
+**Option A** : Arrêter MySQL local
+```bash
+# Linux
+sudo systemctl stop mysql
+sudo systemctl disable mysql
+
+# macOS
+brew services stop mysql
+
+# Windows
+net stop MySQL80
+```
+
+**Option B** : Changer le port Docker
+```yaml
+ports:
+  - "3307:3306"  # Utiliser 3307 au lieu de 3306
+```
+
+### 7.2 Conteneur Ne Démarre Pas
+
+**Diagnostic** :
+```bash
+# Voir les logs d'erreur
+docker-compose logs mysql-emsi
+
+# Vérifier l'état détaillé
+docker inspect emsi_mysql
+```
+
+**Causes fréquentes** :
+
+1. **Volume corrompu**
+```bash
+docker-compose down -v
+docker volume rm docker_mysql_data
+docker-compose up -d
+```
+
+2. **Permissions insuffisantes**
+```bash
+sudo chown -R $(whoami) docker/
+```
+
+3. **Mémoire insuffisante**
+```bash
+# Augmenter la RAM Docker Desktop (Settings → Resources)
+```
+
+### 7.3 Script init.sql Ne S'Exécute Pas
+
+**Cause** : Le volume persiste entre redémarrages
+
+**Solution** :
+```bash
+# Supprimer TOUT (données comprises)
+docker-compose down -v
+
+# Recréer
+docker-compose up -d
+
+# Vérifier l'exécution
+docker-compose logs mysql-emsi | grep "init.sql"
+```
+
+**Vérifier manuellement** :
+```bash
+docker exec -it emsi_mysql mysql -u emsi_user -p -e "USE emsi_db; SHOW TABLES;"
+```
+
+### 7.4 Cannot Connect from Java
+
+**Checklist** :
+
+1. **MySQL démarré ?**
+```bash
+docker-compose ps
+# STATUS doit être "Up"
+```
+
+2. **Port correct ?**
+```xml
+<!-- hibernate.cfg.xml -->
+<property name="hibernate.connection.url">
+    jdbc:mysql://localhost:3306/emsi_db?serverTimezone=UTC
+</property>
+```
+
+3. **Credentials corrects ?**
+```xml
+<property name="hibernate.connection.username">emsi_user</property>
+<property name="hibernate.connection.password">emsi_pass</property>
+```
+
+4. **Driver MySQL présent ?**
+```xml
+<!-- pom.xml -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.33</version>
+</dependency>
+```
+
+5. **Test de connexion direct** :
+```bash
+mysql -h 127.0.0.1 -P 3306 -u emsi_user -p emsi_db
+```
+
+### 7.5 Problèmes de Performance
+
+**Symptômes** : Requêtes lentes, CPU élevé
+
+**Solutions** :
+
+1. **Augmenter la mémoire** :
+```yaml
+deploy:
+  resources:
+    limits:
+      memory: 1G  # Au lieu de 512M
+```
+
+2. **Activer le cache de requêtes** :
+```yaml
+command:
+  - --query-cache-type=1
+  - --query-cache-size=64M
+```
+
+3. **Optimiser les indexes** :
+```sql
+-- Analyser les requêtes lentes
+SHOW PROCESSLIST;
+EXPLAIN SELECT * FROM commande WHERE id_client = 1;
+```
+
+### 7.6 Erreur "Authentication Plugin"
+
+**Erreur** :
+```
+Unable to load authentication plugin 'caching_sha2_password'
+```
+
+**Solution** : Utiliser mysql_native_password
+```yaml
+services:
+  mysql-emsi:
+    command: --default-authentication-plugin=mysql_native_password
+```
+
+**Ou changer le mot de passe** :
+```bash
+docker exec -it emsi_mysql mysql -u root -p
+```
+```sql
+ALTER USER 'emsi_user'@'%' IDENTIFIED WITH mysql_native_password BY 'emsi_pass';
+FLUSH PRIVILEGES;
+```
+
+---
+
+## 8. Checklist de Validation
+
+### Configuration Initiale
+- [ ] Dossier `docker/` créé
+- [ ] Fichier `docker-compose.yml` présent
+- [ ] Fichier `init.sql` présent
+- [ ] Syntaxe YAML valide (pas d'erreur d'indentation)
+
+### Démarrage
+- [ ] `docker-compose up -d` réussit sans erreur
+- [ ] `docker-compose ps` affiche `Up` avec port 3306
+- [ ] Logs ne montrent pas d'erreur : `docker-compose logs`
+
+### Connexion
+- [ ] Connexion MySQL réussie : `docker exec -it emsi_mysql mysql -u emsi_user -p`
+- [ ] Base `emsi_db` existe : `SHOW DATABASES;`
+- [ ] Tables créées : `SHOW TABLES;` → `client`, `commande`
+- [ ] Données présentes : `SELECT COUNT(*) FROM client;` → 5
+
+### IntelliJ IDEA
+- [ ] Database Tool ouvert
+- [ ] Connexion MySQL ajoutée
+- [ ] Test connection réussi (✅ Succeeded)
+- [ ] Tables visibles dans l'arborescence
+- [ ] Requêtes SQL exécutables
+
+### Application Java
+- [ ] `hibernate.cfg.xml` pointe vers `localhost:3306`
+- [ ] Credentials corrects (`emsi_user` / `emsi_pass`)
+- [ ] SessionFactory se crée sans erreur
+- [ ] Opérations CRUD fonctionnent
+
+---
+
+## 9. Commandes Récapitulatives
+
+### Configuration Initiale
+```bash
+# Créer la structure
+mkdir -p docker
+cd docker
+touch docker-compose.yml init.sql
+
+# Éditer les fichiers (copier les contenus fournis)
+nano docker-compose.yml
+nano init.sql
+```
+
+### Gestion du Cycle de Vie
+```bash
+# Démarrer
+docker-compose up -d
+
+# Vérifier l'état
+docker-compose ps
+docker-compose logs -f
+
+# Connexion
+docker exec -it emsi_mysql mysql -u emsi_user -p
+
+# Arrêter
+docker-compose stop      # Temporaire
+docker-compose down      # Définitif (données conservées)
+docker-compose down -v   # Suppression TOTALE
+```
+
+### Maintenance
+```bash
+# Redémarrer
+docker-compose restart
+
+# Recréer
+docker-compose up -d --force-recreate
+
+# Voir les ressources
+docker stats emsi_mysql
+
+# Nettoyer
+docker system prune
+docker volume prune
+```
+
+### Backup et Restore
+```bash
+# Backup
+docker exec emsi_mysql mysqldump -u emsi_user -pemsi_pass emsi_db > backup.sql
+
+# Restore
+docker exec -i emsi_mysql mysql -u emsi_user -pemsi_pass emsi_db < backup.sql
+```
+
+---
+
+## 10. Pour Aller Plus Loin
+
+### Scripts Automatisés
+
+**Créer** `docker/start.sh` :
+```bash
+#!/bin/bash
+echo "🚀 Démarrage de l'environnement EMSI..."
+docker-compose up -d
+echo "⏳ Attente de MySQL..."
+sleep 10
+docker-compose logs mysql-emsi | tail -n 20
+echo "✅ Environnement prêt !"
+echo "📊 Connexion : mysql -h 127.0.0.1 -P 3306 -u emsi_user -p"
+```
+
+**Rendre exécutable** :
+```bash
+chmod +x docker/start.sh
+./docker/start.sh
+```
+
+### Multi-Environnements
+
+**Créer** `docker-compose.dev.yml` et `docker-compose.prod.yml`
+
+**Utiliser** :
+```bash
+# Dev
+docker-compose -f docker-compose.dev.yml up -d
+
+# Prod
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Monitoring avec Adminer
+
+**Ajouter** dans `docker-compose.yml` :
+```yaml
+services:
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - emsi_network
+```
+
+Accès : http://localhost:8081
+
+---
+
+**✅ Configuration Docker Compose terminée !**  
+Votre environnement MySQL est maintenant opérationnel. Passez à la suite du TP.
+
+---
+
+**© 2025 - EMSI Casablanca**  
+*Guide créé pour le module Java Avancé*
+
+
+
+---
+
+**Auteur** : A. Larhlimi
+
