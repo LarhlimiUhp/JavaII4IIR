@@ -1,0 +1,5 @@
+com\examen\stock\exception\StockException.class
+com\examen\stock\repository\Repository.class
+com\examen\stock\model\Produit.class
+com\examen\stock\MainApp.class
+com\examen\stock\service\GestionnaireStock.class
