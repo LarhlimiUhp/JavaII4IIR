@@ -1,4 +1,4 @@
-Voici la **Partie 1** de votre support de cours, conçue pour vous préparer aussi bien aux questions théoriques (QCM) qu'aux exercices de complétion de code demandés à l'examen.
+
 
 ---
 
