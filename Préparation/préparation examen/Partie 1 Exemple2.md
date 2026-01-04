@@ -182,4 +182,4 @@ public class MainApp {
 2.  **Exceptions :** Le `try-catch` dans le `main` et le `orElseThrow` dans le Stream montrent la gestion propre des erreurs.
 3.  **Collections :** L'utilisation de `ArrayList` et des `Streams` (`filter`, `findFirst`, `collect`) couvre la manipulation avancée de données demandée.
 
-**Souhaitez-vous passer à la Partie 2 (Threads et Concurrence) ?**
+
