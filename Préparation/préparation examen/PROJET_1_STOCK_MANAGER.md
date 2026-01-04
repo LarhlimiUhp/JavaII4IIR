@@ -104,8 +104,9 @@ L'utilisation de **`T`** est un paramètre de type.
 *   **`extends Produit`** : C'est une borne supérieure. Elle garantit que `T` possède les méthodes de `Produit`.
 *   **Avantages** : Suppression des casts manuels, sécurité de type à la compilation, et code réutilisable.
 
-### Points à retenir pour l'examen
+### Points à retenir:
 1.  **Collections** : La `HashMap` est idéale pour l'accès par clé unique ($O(1)$).
 2.  **Exceptions** : Les exceptions héritant de `Exception` sont "checkées" et imposent un bloc `try-catch`.
 3.  **Encapsulation** : Toujours utiliser des attributs `private` et des getters/setters `public`.
+
 
