@@ -1,6 +1,17 @@
-# Projet Java : StockManager (Généricité, Collections, Exceptions)
+# Programmation Avancée : "Gestionnaire de Stock Générique"
+Objectif : Créer une application capable de gérer n'importe quel type de produit (électronique, alimentaire, etc.) en utilisant la généricité et les collections avancées.
 
-## 1. Structure du Projet
+## Concepts Clés :
+### Généricité : Créer une classe Stock<T extends Produit> avec des méthodes ajouter(T item), rechercher(String id).
+Exceptions : Définir des exceptions personnalisées : ProduitEpuiseException, IdInvalideException.
+Collections : Utiliser une HashMap pour un accès rapide aux produits par ID et des Streams pour filtrer les produits par prix ou catégorie.
+Challenge : Implémenter un comparateur (Comparator) pour trier dynamiquement les produits selon différents critères.
+
+
+
+## Projet Java : StockManager (Généricité, Collections, Exceptions)
+
+### 1. Structure du Projet
 ```text
 StockManager/
 ├── src/
@@ -97,3 +108,4 @@ L'utilisation de **`T`** est un paramètre de type.
 1.  **Collections** : La `HashMap` est idéale pour l'accès par clé unique ($O(1)$).
 2.  **Exceptions** : Les exceptions héritant de `Exception` sont "checkées" et imposent un bloc `try-catch`.
 3.  **Encapsulation** : Toujours utiliser des attributs `private` et des getters/setters `public`.
+
